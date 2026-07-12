@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Settings</h1>
+            <p>Здесь вы можете изменить базовые игровые параметры.</p>
+
+            <form id="settingsForm">
+                <div class="form-row">
+                    <label for="mode">Режим</label>
+                    <select id="mode" name="mode">
+                        <option value="classic">Classic</option>
+                        <option value="orbit">Orbit</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="difficulty">Сложность</label>
+                    <select id="difficulty" name="difficulty">
+                        <option value="easy">Easy</option>
+                        <option value="normal">Normal</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+
+                <div class="form-row checkbox-row">
+                    <label>
+                        <input type="checkbox" id="showHints" name="showHints">
+                        Показывать подсказки
+                    </label>
+                </div>
+
+                <div class="form-row">
+                    <label for="mapSource">Источник карты</label>
+                    <input type="text" id="mapSource" name="mapSource" placeholder="default">
+                </div>
+
+                <div class="button-row">
+                    <button type="button" class="btn" onclick="saveSettings()">Сохранить</button>
+                    <a class="btn secondary ghost" href="/">Назад</a>
+                </div>
+            </form>
+
+            <div id="statusMessage" class="status-message"></div>
+        </div>
+    </div>
+    <script src="/static/js/settings.js"></script>
+</body>
+</html>

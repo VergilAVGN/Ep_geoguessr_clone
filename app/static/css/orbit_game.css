@@ -1,0 +1,68 @@
+/**
+ * Orbit Game page layout only.
+ * Classic Game is unaffected; guess map styles live in guess_map.css.
+ */
+
+.orbit-game-body {
+    margin: 0;
+    overflow: hidden;
+    background: #0a1628;
+}
+
+.orbit-game {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Full-screen satellite viewport — map panel floats above this layer */
+.orbit-game__viewport {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 20%, #1e3a5f 0%, #0a1628 55%, #050b14 100%);
+}
+
+.orbit-game__satellite-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    user-select: none;
+    pointer-events: none;
+}
+
+.orbit-game__satellite-image--placeholder {
+    display: none;
+}
+
+.orbit-game__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    padding: 16px 20px;
+    pointer-events: none;
+}
+
+.orbit-game__back-link {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #f9fafb;
+    text-decoration: none;
+    background: rgba(17, 24, 39, 0.75);
+    border: 1px solid #334155;
+    backdrop-filter: blur(8px);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.orbit-game__back-link:hover {
+    background: rgba(31, 41, 55, 0.9);
+    transform: translateY(-1px);
+}

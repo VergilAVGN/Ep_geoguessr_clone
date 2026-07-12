@@ -1,0 +1,138 @@
+/**
+ * Reusable guessing map panel styles.
+ * Used by Orbit Game today; structured for future Classic Game reuse.
+ */
+
+:root {
+    --guess-map-width: 320px;
+    --guess-map-width-expanded: 650px;
+    --guess-map-height: 220px;
+    --guess-map-height-expanded: 450px;
+    --guess-map-transition: 250ms ease;
+    --guess-map-radius: 16px;
+    --guess-map-bg: rgba(17, 24, 39, 0.96);
+    --guess-map-border: #334155;
+    --guess-map-accent: #38bdf8;
+    --guess-map-accent-pressed: #2563eb;
+    --guess-map-text: #f9fafb;
+    --guess-map-muted: #9ca3af;
+}
+
+/* Floating panel — anchored bottom-right, does not affect page layout */
+.guess-map-panel {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: var(--guess-map-width);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border-radius: var(--guess-map-radius);
+    border: 1px solid var(--guess-map-border);
+    background: var(--guess-map-bg);
+    box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    backdrop-filter: blur(10px);
+    transition: width var(--guess-map-transition);
+    overflow: hidden;
+}
+
+/* Smooth expand on hover while staying anchored to bottom-right */
+.guess-map-panel:hover {
+    width: var(--guess-map-width-expanded);
+}
+
+.guess-map-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 22px;
+}
+
+.guess-map-panel__title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--guess-map-text);
+    text-transform: uppercase;
+}
+
+.guess-map-panel__timer {
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--guess-map-accent);
+}
+
+.guess-map-panel__map-wrapper {
+    width: 100%;
+    height: var(--guess-map-height);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--guess-map-border);
+    transition: height var(--guess-map-transition);
+}
+
+.guess-map-panel:hover .guess-map-panel__map-wrapper {
+    height: var(--guess-map-height-expanded);
+}
+
+.guess-map-panel__map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Leaflet controls inside the dark panel */
+.guess-map-panel .leaflet-control-zoom a {
+    color: #111827;
+}
+
+.guess-map-panel__guess-btn {
+    width: 100%;
+    border: none;
+    border-radius: 999px;
+    padding: 11px 18px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #fff;
+    background: linear-gradient(135deg, var(--guess-map-accent), var(--guess-map-accent-pressed));
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease,
+        box-shadow 0.2s ease;
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.25);
+}
+
+.guess-map-panel__guess-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    opacity: 0.95;
+}
+
+.guess-map-panel__guess-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+    box-shadow: none;
+    background: #374151;
+    color: var(--guess-map-muted);
+}
+
+/* Future panels */
+.guess-map-panel__score-panel,
+.guess-map-panel__scan-results {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--guess-map-muted);
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(31, 41, 55, 0.8);
+    border: 1px solid var(--guess-map-border);
+}
+
+.guess-map-panel__score-panel:not([hidden]),
+.guess-map-panel__scan-results:not([hidden]) {
+    display: block;
+}

@@ -1,0 +1,44 @@
+{#
+  Reusable interactive guessing map component (Leaflet.js + OpenStreetMap).
+  Currently included only by Orbit Game; designed for future Classic Game reuse.
+#}
+<div
+    class="guess-map-panel"
+    id="guess-map-panel"
+    aria-label="Interactive guessing map"
+>
+    <div class="guess-map-panel__header">
+        <span class="guess-map-panel__title">Your guess</span>
+        {# Future: round timer #}
+        <span class="guess-map-panel__timer" id="guess-map-timer" hidden></span>
+    </div>
+
+    <div class="guess-map-panel__map-wrapper">
+        <div id="guess-map" class="guess-map-panel__map"></div>
+    </div>
+
+    <button
+        type="button"
+        class="guess-map-panel__guess-btn"
+        id="guess-map-submit"
+        disabled
+    >
+        Guess
+    </button>
+
+    {# Future: score summary after a round #}
+    <div
+        class="guess-map-panel__score-panel"
+        id="guess-map-score"
+        hidden
+        aria-live="polite"
+    ></div>
+
+    {# Future: satellite scan / round results #}
+    <div
+        class="guess-map-panel__scan-results"
+        id="guess-map-scan-results"
+        hidden
+        aria-live="polite"
+    ></div>
+</div>
