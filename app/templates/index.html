@@ -1,13 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GeoGuessr Clone</title>
+    <link rel="stylesheet" href="/static/css/main.css">
 </head>
 <body>
+    <div class="container">
+        <div class="card">
+            <h1>EarthGuessr</h1>
+            <p>Choose a game mode and start guessing places on the map.</p>
 
-<h1>EarthGuessr</h1>
+            <div class="button-row">
+                <button class="btn" onclick="window.location.href='/classic_game'">Classic Game</button>
+                <button class="btn secondary" onclick="window.location.href='/orbit_game'">Orbit Game</button>
+                <button class="btn ghost" onclick="window.location.href='/settings'">Settings</button>
+            </div>
 
-<button>Start Game</button>
-
+           
+        </div>
+    </div>
 </body>
 </html>

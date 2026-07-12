@@ -1,0 +1,145 @@
+:root {
+    --bg: #0f172a;
+    --panel: #111827;
+    --panel-2: #1f2937;
+    --text: #f9fafb;
+    --muted: #9ca3af;
+    --accent: #38bdf8;
+    --accent-2: #22c55e;
+    --border: #334155;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: linear-gradient(135deg, var(--bg), #1e293b);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.card {
+    background: rgba(17, 24, 39, 0.95);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+h1 {
+    margin: 0 0 10px;
+    font-size: 2rem;
+}
+
+p {
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.button-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+}
+
+.btn {
+    border: none;
+    border-radius: 999px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    color: white;
+    background: linear-gradient(135deg, var(--accent), #2563eb);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    opacity: 0.95;
+}
+
+.btn.secondary {
+    background: linear-gradient(135deg, var(--accent-2), #16a34a);
+}
+
+.btn.ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+.mode-preview {
+    margin-top: 24px;
+    padding: 18px;
+    border-radius: 16px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+}
+
+.mode-preview h2 {
+    margin-top: 0;
+    font-size: 1.2rem;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.form-row label {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.form-row select,
+.form-row input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: #111827;
+    color: var(--text);
+}
+
+.form-row input[type="text"]::placeholder {
+    color: var(--muted);
+}
+
+.checkbox-row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.checkbox-row label {
+    margin: 0;
+    cursor: pointer;
+}
+
+.status-message {
+    margin-top: 18px;
+    font-size: 0.95rem;
+    min-height: 24px;
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 20px;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
