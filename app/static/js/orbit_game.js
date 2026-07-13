@@ -7,23 +7,59 @@
     /** @type {GuessMap|null} */
     let guessMap = null;
 
-    /** @type {string|null} Reserved for future POST /api/games session id */
+    /** @type {OrbitResultsOverlay|null} */
+    let resultsOverlay = null;
+
+    /** @type {HTMLElement|null} */
+    let gameRootEl = null;
+
+    /** @type {string|null} */
     let activeGameId = null;
 
-    /** @type {object|null} Metadata for the currently displayed orbit image */
+    /** @type {object|null} */
     let currentImageMetadata = null;
 
-    /** @type {string|null} Object URL for the current JPEG blob */
+    /** @type {string|null} */
     let currentImageObjectUrl = null;
 
     /** @type {boolean} */
     let isLoadingImage = false;
 
+    /** @type {number} */
+    let currentRoundNumber = 1;
+
+    /** @type {number} */
+    let totalRounds = 5;
+
+    /** @type {number} */
+    let totalScore = 0;
+
+    /** @type {boolean} */
+    let gameFinished = false;
+
+    /** @type {{ roundNumber: number, score: number|null }[]} */
+    let roundResults = Array.from({ length: 5 }, (_, index) => ({
+        roundNumber: index + 1,
+        score: null,
+    }));
+
     document.addEventListener('DOMContentLoaded', () => {
+        gameRootEl = document.querySelector('.orbit-game');
+        setupResultsOverlay();
         setupGuessMap();
         setupSatelliteViewport();
         setupNewImageButton();
+        renderRoundOverview();
     });
+
+    function setupResultsOverlay() {
+        resultsOverlay = new OrbitResultsOverlay({
+            onPlayAgain: () => {
+                restartGame();
+            },
+        });
+        resultsOverlay.init();
+    }
 
     function setupSatelliteViewport() {
         const imageEl = document.getElementById('orbit-satellite-image');
@@ -41,20 +77,57 @@
         }
 
         newImageBtn.addEventListener('click', () => {
-            loadRandomImage();
+            if (!gameFinished) {
+                loadRandomImage();
+            }
         });
     }
 
-    /**
-     * Fetch and display a random satellite image from the backend.
-     */
+    function syncRoundResults() {
+        roundResults = Array.from({ length: totalRounds }, (_, index) => {
+            const roundNumber = index + 1;
+            const existing = roundResults.find((entry) => entry.roundNumber === roundNumber);
+            return existing || { roundNumber, score: null };
+        });
+    }
+
+    function renderRoundOverview() {
+        const overviewEl = document.getElementById('orbit-round-overview');
+        if (!overviewEl) {
+            return;
+        }
+
+        syncRoundResults();
+
+        overviewEl.innerHTML = roundResults
+            .map((entry) => {
+                const scoreText = entry.score == null ? '--' : entry.score;
+                const classes = ['orbit-game__round-card'];
+                if (entry.roundNumber === currentRoundNumber && entry.score == null) {
+                    classes.push('is-active');
+                }
+                if (entry.score != null) {
+                    classes.push('is-complete');
+                }
+
+                return `
+                    <div class="${classes.join(' ')}">
+                        <span class="orbit-game__round-number">${entry.roundNumber}</span>
+                        <span class="orbit-game__round-score">${scoreText}</span>
+                    </div>
+                `;
+            })
+            .join('');
+    }
+
     async function loadRandomImage() {
-        if (isLoadingImage) {
+        if (isLoadingImage || gameFinished) {
             return;
         }
 
         const imageEl = document.getElementById('orbit-satellite-image');
         const newImageBtn = document.getElementById('orbit-new-image-btn');
+        const nextRoundBtn = document.getElementById('guess-map-next-round');
 
         if (!imageEl) {
             return;
@@ -63,6 +136,9 @@
         isLoadingImage = true;
         if (newImageBtn) {
             newImageBtn.disabled = true;
+        }
+        if (nextRoundBtn) {
+            nextRoundBtn.disabled = true;
         }
 
         try {
@@ -79,6 +155,7 @@
             imageEl.style.visibility = 'visible';
 
             guessMap?.reset();
+            guessMap?.enterActiveMode();
             await startOrbitRound(payload.metadata);
         } catch (error) {
             console.error('[Orbit] Failed to load satellite image:', error);
@@ -86,6 +163,9 @@
             isLoadingImage = false;
             if (newImageBtn) {
                 newImageBtn.disabled = false;
+            }
+            if (nextRoundBtn && !nextRoundBtn.hidden) {
+                nextRoundBtn.disabled = false;
             }
         }
     }
@@ -97,6 +177,9 @@
             },
             onGuess(coords) {
                 handleGuess(coords);
+            },
+            onNextRound() {
+                loadRandomImage();
             },
         });
 
@@ -116,6 +199,7 @@
                 body: JSON.stringify({
                     lat: metadata.latitude,
                     lon: metadata.longitude,
+                    game_id: activeGameId || undefined,
                 }),
             });
 
@@ -125,19 +209,20 @@
 
             const payload = await response.json();
             activeGameId = payload.id;
+            currentRoundNumber = payload.round_number;
+            totalRounds = payload.total_rounds;
+            totalScore = payload.total_score;
+            syncRoundResults();
+            renderRoundOverview();
         } catch (error) {
             console.error('[Orbit] Failed to start round:', error);
         }
     }
 
-    /**
-     * Submit the selected guess to the backend and visualize the round result.
-     * @param {{ lat: number, lon: number }} coords
-     */
     async function handleGuess(coords) {
         console.info('[Orbit] Guess submitted:', coords);
 
-        if (!activeGameId) {
+        if (!activeGameId || !guessMap?.isGuessingEnabled) {
             return;
         }
 
@@ -157,15 +242,91 @@
             }
 
             const result = await response.json();
+            totalScore = result.total_score;
+            totalRounds = result.total_rounds;
+            roundResults = roundResults.map((entry) =>
+                entry.roundNumber === result.round_number
+                    ? { ...entry, score: result.score }
+                    : entry,
+            );
+
+            if (!result.game_finished) {
+                currentRoundNumber = result.round_number + 1;
+            } else {
+                currentRoundNumber = result.round_number;
+            }
+
+            syncRoundResults();
+            renderRoundOverview();
             guessMap?.showRoundResult(result);
             guessMap?.setScorePanel({
                 score: result.score,
                 distanceKm: result.distance,
                 label: 'Round result',
             });
+            gameFinished = result.game_finished;
+            guessMap?.enterReviewMode({ showNextRound: !result.game_finished });
+
+            if (result.game_finished) {
+                await showFinalResults();
+            }
         } catch (error) {
             console.error('[Orbit] Guess API error:', error);
         }
+    }
+
+    async function showFinalResults() {
+        if (!activeGameId || !resultsOverlay) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/orbit/${activeGameId}/results`);
+            if (!response.ok) {
+                throw new Error(`Failed to load final results (${response.status})`);
+            }
+
+            const results = await response.json();
+            gameRootEl?.classList.add('is-results-active');
+
+            window.setTimeout(() => {
+                resultsOverlay.show(results);
+            }, 450);
+        } catch (error) {
+            console.error('[Orbit] Failed to show final results:', error);
+        }
+    }
+
+    function restartGame() {
+        resultsOverlay?.hide();
+        gameRootEl?.classList.remove('is-results-active');
+
+        if (currentImageObjectUrl) {
+            URL.revokeObjectURL(currentImageObjectUrl);
+            currentImageObjectUrl = null;
+        }
+
+        activeGameId = null;
+        currentImageMetadata = null;
+        gameFinished = false;
+        currentRoundNumber = 1;
+        totalRounds = 5;
+        totalScore = 0;
+        roundResults = Array.from({ length: totalRounds }, (_, index) => ({
+            roundNumber: index + 1,
+            score: null,
+        }));
+
+        const imageEl = document.getElementById('orbit-satellite-image');
+        if (imageEl) {
+            imageEl.removeAttribute('src');
+            imageEl.style.visibility = 'hidden';
+        }
+
+        renderRoundOverview();
+        guessMap?.reset();
+        guessMap?.enterActiveMode();
+        loadRandomImage();
     }
 
     window.orbitGame = {
@@ -176,6 +337,7 @@
             return currentImageMetadata;
         },
         loadRandomImage,
+        restartGame,
         setGameId(gameId) {
             activeGameId = gameId;
         },

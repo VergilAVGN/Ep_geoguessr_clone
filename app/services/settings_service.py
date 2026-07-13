@@ -8,6 +8,7 @@ class SettingsService:
             difficulty=Difficulty.normal,
             show_hints=True,
             map_source="default",
+            show_timer=True,
         )
 
     def get_settings(self) -> SettingsOut:

@@ -24,11 +24,16 @@ class GuessMap {
     constructor(options = {}) {
         this.mapElementId = options.mapElementId || 'guess-map';
         this.guessButtonId = options.guessButtonId || 'guess-map-submit';
+        this.nextRoundButtonId = options.nextRoundButtonId || 'guess-map-next-round';
         this.panelElementId = options.panelElementId || 'guess-map-panel';
         this.apiBaseUrl = options.apiBaseUrl || '/api/games';
         this.onGuess = options.onGuess || null;
+        this.onNextRound = options.onNextRound || null;
         this.onCoordsChange = options.onCoordsChange || null;
         this.defaultView = options.defaultView || { lat: 20, lon: 0, zoom: 2 };
+
+        /** @type {boolean} */
+        this.isGuessingEnabled = true;
 
         /** @type {L.Map|null} */
         this.map = null;
@@ -45,14 +50,18 @@ class GuessMap {
 
         this.panelEl = null;
         this.mapEl = null;
+        this.mapWrapperEl = null;
         this.guessBtn = null;
+        this.nextRoundBtn = null;
     }
 
     /** Initialize DOM bindings and Leaflet map. */
     init() {
         this.panelEl = document.getElementById(this.panelElementId);
         this.mapEl = document.getElementById(this.mapElementId);
+        this.mapWrapperEl = this.panelEl?.querySelector('.guess-map-panel__map-wrapper') || null;
         this.guessBtn = document.getElementById(this.guessButtonId);
+        this.nextRoundBtn = document.getElementById(this.nextRoundButtonId);
 
         if (!this.mapEl) {
             console.error(`GuessMap: element #${this.mapElementId} not found`);
@@ -62,6 +71,8 @@ class GuessMap {
         this._initLeaflet();
         this._bindPanelEvents();
         this._bindGuessButton();
+        this._bindNextRoundButton();
+        this.enterActiveMode();
     }
 
     _initLeaflet() {
@@ -79,6 +90,9 @@ class GuessMap {
         }).addTo(this.map);
 
         this.map.on('click', (event) => {
+            if (!this.isGuessingEnabled) {
+                return;
+            }
             this._placeOrMoveMarker(event.latlng);
         });
 
@@ -108,8 +122,52 @@ class GuessMap {
 
     _syncGuessButton() {
         if (this.guessBtn) {
-            this.guessBtn.disabled = !this.selectedCoords;
+            this.guessBtn.disabled = !this.selectedCoords || !this.isGuessingEnabled;
         }
+    }
+
+    _bindNextRoundButton() {
+        if (!this.nextRoundBtn) {
+            return;
+        }
+
+        this.nextRoundBtn.addEventListener('click', () => {
+            this.onNextRound?.();
+        });
+    }
+
+    /** Lock the map after a round ends; show Next Round button. */
+    enterReviewMode({ showNextRound = true } = {}) {
+        this.isGuessingEnabled = false;
+
+        if (this.mapWrapperEl) {
+            this.mapWrapperEl.classList.add('is-locked');
+        }
+        if (this.guessBtn) {
+            this.guessBtn.hidden = true;
+            this.guessBtn.disabled = true;
+        }
+        if (this.nextRoundBtn) {
+            this.nextRoundBtn.hidden = !showNextRound;
+            this.nextRoundBtn.disabled = false;
+        }
+    }
+
+    /** Re-enable guessing for a new round. */
+    enterActiveMode() {
+        this.isGuessingEnabled = true;
+
+        if (this.mapWrapperEl) {
+            this.mapWrapperEl.classList.remove('is-locked');
+        }
+        if (this.guessBtn) {
+            this.guessBtn.hidden = false;
+        }
+        if (this.nextRoundBtn) {
+            this.nextRoundBtn.hidden = true;
+        }
+
+        this._syncGuessButton();
     }
 
     _bindPanelEvents() {
@@ -226,6 +284,16 @@ class GuessMap {
         scoreEl.hidden = parts.length === 0;
     }
 
+    setRoundProgress(_data) {
+        const progressEl = document.getElementById('guess-map-round-progress');
+        if (!progressEl) {
+            return;
+        }
+
+        progressEl.innerHTML = '';
+        progressEl.hidden = true;
+    }
+
     /** @param {string} html */
     setScanResults(html) {
         const scanEl = document.getElementById('guess-map-scan-results');
@@ -322,6 +390,7 @@ class GuessMap {
         this.setTimerDisplay('');
         this.setScorePanel({});
         this.setScanResults('');
+        this.enterActiveMode();
     }
 }
 

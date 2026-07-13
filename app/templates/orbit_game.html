@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/orbit_game.css">
     <link rel="stylesheet" href="/static/css/guess_map.css">
+    <link rel="stylesheet" href="/static/css/orbit_results.css">
 </head>
 <body class="orbit-game-body">
     <main class="orbit-game">
@@ -23,6 +24,10 @@
                 id="orbit-satellite-image"
                 alt="Satellite imagery"
             >
+
+            <div class="orbit-game__rounds-panel" id="orbit-rounds-panel" aria-label="Round overview">
+                <div class="orbit-game__round-overview" id="orbit-round-overview"></div>
+            </div>
 
             <div class="orbit-game__overlay">
                 <a class="orbit-game__back-link" href="/">← to the main page</a>
@@ -37,6 +42,7 @@
         </div>
 
         {% include "partials/guess_map.html" %}
+        {% include "partials/orbit_results_overlay.html" %}
     </main>
 
     <script
@@ -46,6 +52,7 @@
     ></script>
     <script src="/static/js/guess_map.js"></script>
     <script src="/static/js/orbit_imagery.js"></script>
+    <script src="/static/js/orbit_results.js"></script>
     <script src="/static/js/orbit_game.js"></script>
 </body>
 </html>

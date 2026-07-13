@@ -1,0 +1,298 @@
+/**
+ * In-place end-of-game results overlay for Orbit Game.
+ */
+
+.orbit-game.is-results-active .orbit-game__satellite-image {
+    filter: blur(10px) brightness(0.35);
+    transform: scale(1.03);
+    transition: filter 0.55s ease, transform 0.55s ease;
+}
+
+.orbit-game.is-results-active .orbit-game__rounds-panel,
+.orbit-game.is-results-active .orbit-game__overlay,
+.orbit-game.is-results-active .guess-map-panel {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.orbit-results {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(2, 6, 23, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.45s ease, visibility 0.45s ease;
+}
+
+.orbit-results.is-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.orbit-results__panel {
+    width: min(1180px, 100%);
+    height: min(720px, calc(100vh - 48px));
+    display: grid;
+    grid-template-columns: minmax(280px, 360px) 1fr;
+    gap: 0;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(15, 23, 42, 0.92);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(18px);
+    overflow: hidden;
+    transform: translateY(24px);
+    opacity: 0;
+    transition: transform 0.5s ease, opacity 0.5s ease;
+}
+
+.orbit-results.is-visible .orbit-results__panel {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.orbit-results__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 24px 22px;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.orbit-results__eyebrow {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #38bdf8;
+}
+
+.orbit-results__title {
+    margin: 0;
+    font-size: 1.65rem;
+    color: #f8fafc;
+}
+
+.orbit-results__stars {
+    display: flex;
+    gap: 6px;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: #334155;
+}
+
+.orbit-results__star.is-filled {
+    color: #fbbf24;
+    text-shadow: 0 0 12px rgba(251, 191, 36, 0.45);
+}
+
+.orbit-results__score-block {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 8px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(30, 41, 59, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.orbit-results__score-label {
+    width: 100%;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.orbit-results__score-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #f8fafc;
+    font-variant-numeric: tabular-nums;
+}
+
+.orbit-results__score-max {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.orbit-results__rounds-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.orbit-results__round-item {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.65);
+    color: #e2e8f0;
+    padding: 10px 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.orbit-results__round-item:hover {
+    border-color: rgba(56, 189, 248, 0.45);
+    background: rgba(30, 41, 59, 0.85);
+}
+
+.orbit-results__round-item.is-active {
+    border-color: rgba(56, 189, 248, 0.85);
+    background: rgba(56, 189, 248, 0.12);
+    transform: translateX(4px);
+}
+
+.orbit-results__round-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.orbit-results__round-item-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.orbit-results__round-item-score {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #38bdf8;
+}
+
+.orbit-results__round-item-meta {
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+
+.orbit-results__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.orbit-results__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.orbit-results__btn:hover {
+    transform: translateY(-1px);
+    opacity: 0.95;
+}
+
+.orbit-results__btn--primary {
+    border: none;
+    color: #fff;
+    background: linear-gradient(135deg, #38bdf8, #2563eb);
+}
+
+.orbit-results__btn--ghost {
+    color: #f8fafc;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.orbit-results__map-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.orbit-results__map-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px 10px;
+}
+
+.orbit-results__map-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.orbit-results__map-hint {
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+
+.orbit-results__map {
+    flex: 1;
+    min-height: 0;
+    margin: 0 18px 18px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.orbit-results-marker {
+    background: transparent;
+    border: none;
+}
+
+.orbit-results-marker__dot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    border: 2px solid #fff;
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.orbit-results-marker__dot--guess {
+    background: #2563eb;
+}
+
+.orbit-results-marker__dot--correct {
+    background: #16a34a;
+}
+
+@media (max-width: 900px) {
+    .orbit-results__panel {
+        grid-template-columns: 1fr;
+        height: min(900px, calc(100vh - 48px));
+    }
+
+    .orbit-results__sidebar {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        max-height: 42%;
+    }
+
+    .orbit-results__map {
+        min-height: 280px;
+    }
+}

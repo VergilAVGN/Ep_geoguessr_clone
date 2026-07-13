@@ -13,23 +13,6 @@
             <p>Здесь вы можете изменить базовые игровые параметры.</p>
 
             <form id="settingsForm">
-                <div class="form-row">
-                    <label for="mode">Режим</label>
-                    <select id="mode" name="mode">
-                        <option value="classic">Classic</option>
-                        <option value="orbit">Orbit</option>
-                    </select>
-                </div>
-
-                <div class="form-row">
-                    <label for="difficulty">Сложность</label>
-                    <select id="difficulty" name="difficulty">
-                        <option value="easy">Easy</option>
-                        <option value="normal">Normal</option>
-                        <option value="hard">Hard</option>
-                    </select>
-                </div>
-
                 <div class="form-row checkbox-row">
                     <label>
                         <input type="checkbox" id="showHints" name="showHints">
@@ -37,9 +20,11 @@
                     </label>
                 </div>
 
-                <div class="form-row">
-                    <label for="mapSource">Источник карты</label>
-                    <input type="text" id="mapSource" name="mapSource" placeholder="default">
+                <div class="form-row checkbox-row">
+                    <label>
+                        <input type="checkbox" id="showTimer" name="showTimer">
+                        Таймер
+                    </label>
                 </div>
 
                 <div class="button-row">

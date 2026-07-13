@@ -6,20 +6,16 @@ function loadSettings() {
     fetch('/api/settings')
         .then((res) => res.json())
         .then((data) => {
-            document.getElementById('mode').value = data.mode;
-            document.getElementById('difficulty').value = data.difficulty;
             document.getElementById('showHints').checked = data.show_hints;
-            document.getElementById('mapSource').value = data.map_source;
+            document.getElementById('showTimer').checked = data.show_timer ?? false;
         })
         .catch((err) => console.error('Ошибка загрузки настроек:', err));
 }
 
 function saveSettings() {
     const payload = {
-        mode: document.getElementById('mode').value,
-        difficulty: document.getElementById('difficulty').value,
         show_hints: document.getElementById('showHints').checked,
-        map_source: document.getElementById('mapSource').value,
+        show_timer: document.getElementById('showTimer').checked,
     };
 
     fetch('/api/settings', {
