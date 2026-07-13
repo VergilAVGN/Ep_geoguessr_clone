@@ -30,10 +30,75 @@
     display: block;
     user-select: none;
     pointer-events: none;
+    transition: filter 0.55s ease, transform 0.55s ease;
 }
 
 .orbit-game__satellite-image--placeholder {
     display: none;
+}
+
+/* Semi-transparent rounds panel — top-right corner */
+.orbit-game__rounds-panel {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 2000;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(2, 6, 23, 0.55);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(10px);
+    pointer-events: none;
+}
+
+.orbit-game__round-overview {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.orbit-game__round-card {
+    width: 56px;
+    height: 56px;
+    padding: 6px 4px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(15, 23, 42, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: #f8fafc;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.orbit-game__round-card.is-active {
+    border-color: rgba(56, 189, 248, 0.85);
+    background: rgba(56, 189, 248, 0.18);
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
+}
+
+.orbit-game__round-card.is-complete {
+    background: rgba(37, 99, 235, 0.45);
+    border-color: rgba(96, 165, 250, 0.5);
+}
+
+.orbit-game__round-number {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    opacity: 0.85;
+}
+
+.orbit-game__round-score {
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
 }
 
 .orbit-game__overlay {

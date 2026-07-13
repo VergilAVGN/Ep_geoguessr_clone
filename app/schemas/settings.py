@@ -20,6 +20,7 @@ class SettingsOut(BaseModel):
     difficulty: Difficulty
     show_hints: bool
     map_source: str
+    show_timer: bool
 
 
 class SettingsUpdate(BaseModel):
@@ -27,3 +28,4 @@ class SettingsUpdate(BaseModel):
     difficulty: Optional[Difficulty] = None
     show_hints: Optional[bool] = None
     map_source: Optional[str] = None
+    show_timer: Optional[bool] = None

@@ -7,10 +7,12 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 
 from app.schemas.orbit import (
+    OrbitGameResults,
     OrbitGuessRequest,
     OrbitGuessResult,
     OrbitImageResponse,
     OrbitMetadata,
+    OrbitRoundSummary,
     OrbitStartRequest,
     OrbitStartResponse,
 )
@@ -18,7 +20,9 @@ from app.services.nasa_service import NasaImageFetchError, nasa_service
 
 router = APIRouter(prefix="/api/orbit", tags=["orbit"])
 
-orbit_games: dict[str, dict[str, float | bool]] = {}
+TOTAL_ORBIT_ROUNDS = 5
+MAX_SCORE_PER_ROUND = 5000
+orbit_games: dict[str, dict[str, object]] = {}
 
 
 @router.get("/random")
@@ -52,13 +56,42 @@ def get_random_orbit_image(
 
 @router.post("/start", response_model=OrbitStartResponse)
 def start_orbit_game(payload: OrbitStartRequest):
-    game_id = str(random.randint(100000, 999999))
-    orbit_games[game_id] = {
-        "correct_lat": payload.lat,
-        "correct_lon": payload.lon,
-        "finished": False,
-    }
-    return OrbitStartResponse(id=game_id, correct_lat=payload.lat, correct_lon=payload.lon)
+    game_id = payload.game_id or str(random.randint(100000, 999999))
+    game = orbit_games.get(game_id)
+
+    if game is None:
+        game = {
+            "round_number": 1,
+            "total_rounds": TOTAL_ORBIT_ROUNDS,
+            "total_score": 0,
+            "finished": False,
+            "correct_lat": payload.lat,
+            "correct_lon": payload.lon,
+            "completed_rounds": 0,
+            "rounds": [],
+        }
+        orbit_games[game_id] = game
+    else:
+        if bool(game["finished"]):
+            raise HTTPException(status_code=400, detail="Orbit game already finished")
+
+        if int(game["completed_rounds"]) >= TOTAL_ORBIT_ROUNDS:
+            game["finished"] = True
+            raise HTTPException(status_code=400, detail="Orbit game already reached the last round")
+
+        game["round_number"] = int(game["completed_rounds"]) + 1
+        game["correct_lat"] = payload.lat
+        game["correct_lon"] = payload.lon
+
+    return OrbitStartResponse(
+        id=game_id,
+        correct_lat=float(game["correct_lat"]),
+        correct_lon=float(game["correct_lon"]),
+        round_number=int(game["round_number"]),
+        total_rounds=int(game["total_rounds"]),
+        total_score=int(game["total_score"]),
+        finished=bool(game["finished"]),
+    )
 
 
 @router.post("/guess", response_model=OrbitGuessResult)
@@ -74,15 +107,82 @@ def submit_orbit_guess(payload: OrbitGuessRequest):
         float(game["correct_lon"]),
     )
     score = _score_from_distance(distance_km)
+    round_number = int(game["round_number"])
+    completed_rounds = int(game["completed_rounds"]) + 1
+    total_score = int(game["total_score"]) + score
+    game["completed_rounds"] = completed_rounds
+    game["total_score"] = total_score
+    game["finished"] = completed_rounds >= TOTAL_ORBIT_ROUNDS
 
-    game["finished"] = True
+    rounds = game.setdefault("rounds", [])
+    rounds.append(
+        {
+            "round_number": round_number,
+            "score": score,
+            "distance": round(distance_km, 2),
+            "guess_lat": payload.lat,
+            "guess_lon": payload.lon,
+            "correct_lat": float(game["correct_lat"]),
+            "correct_lon": float(game["correct_lon"]),
+        }
+    )
+
     return OrbitGuessResult(
         score=score,
         distance=round(distance_km, 2),
         correct_lat=float(game["correct_lat"]),
         correct_lon=float(game["correct_lon"]),
-        finished=True,
+        finished=bool(game["finished"]),
+        round_number=round_number,
+        total_rounds=TOTAL_ORBIT_ROUNDS,
+        game_finished=bool(game["finished"]),
+        total_score=total_score,
     )
+
+
+@router.get("/{game_id}/results", response_model=OrbitGameResults)
+def get_orbit_results(game_id: str):
+    game = orbit_games.get(game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    completed_rounds = int(game.get("completed_rounds", 0))
+    if completed_rounds < TOTAL_ORBIT_ROUNDS:
+        raise HTTPException(status_code=400, detail="Game is not finished yet")
+
+    total_score = int(game["total_score"])
+    max_score = TOTAL_ORBIT_ROUNDS * MAX_SCORE_PER_ROUND
+    rounds = [
+        OrbitRoundSummary(**round_data)
+        for round_data in game.get("rounds", [])
+    ]
+
+    return OrbitGameResults(
+        id=game_id,
+        total_score=total_score,
+        max_score=max_score,
+        total_rounds=TOTAL_ORBIT_ROUNDS,
+        stars=_stars_from_score(total_score, max_score),
+        rounds=rounds,
+    )
+
+
+def _stars_from_score(total_score: int, max_score: int) -> int:
+    if max_score <= 0:
+        return 0
+
+    ratio = total_score / max_score
+    if ratio >= 0.9:
+        return 5
+    if ratio >= 0.7:
+        return 4
+    if ratio >= 0.5:
+        return 3
+    if ratio >= 0.3:
+        return 2
+    if ratio > 0:
+        return 1
+    return 0
 
 
 def _calculate_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

@@ -1,0 +1,40 @@
+<div
+    class="orbit-results"
+    id="orbit-results-overlay"
+    aria-hidden="true"
+    hidden
+>
+    <div class="orbit-results__panel">
+        <aside class="orbit-results__sidebar">
+            <p class="orbit-results__eyebrow">Game Complete</p>
+            <h2 class="orbit-results__title">Final Results</h2>
+
+            <div class="orbit-results__stars" id="orbit-results-stars" aria-label="Star rating"></div>
+
+            <div class="orbit-results__score-block">
+                <span class="orbit-results__score-label">Total Score</span>
+                <span class="orbit-results__score-value" id="orbit-results-total-score">0</span>
+                <span class="orbit-results__score-max" id="orbit-results-max-score">/ 0</span>
+            </div>
+
+            <div class="orbit-results__rounds-list" id="orbit-results-rounds-list"></div>
+
+            <div class="orbit-results__actions">
+                <button type="button" class="orbit-results__btn orbit-results__btn--primary" id="orbit-results-play-again">
+                    Play Again
+                </button>
+                <a class="orbit-results__btn orbit-results__btn--ghost" href="/" id="orbit-results-main-menu">
+                    Main Menu
+                </a>
+            </div>
+        </aside>
+
+        <section class="orbit-results__map-section" aria-label="Round results map">
+            <div class="orbit-results__map-header">
+                <span class="orbit-results__map-title">Round Map</span>
+                <span class="orbit-results__map-hint">Click a round to focus</span>
+            </div>
+            <div class="orbit-results__map" id="orbit-results-map"></div>
+        </section>
+    </div>
+</div>

@@ -19,12 +19,17 @@ class OrbitImageResponse(BaseModel):
 class OrbitStartRequest(BaseModel):
     lat: float = Field(..., ge=-90, le=90)
     lon: float = Field(..., ge=-180, le=180)
+    game_id: str | None = None
 
 
 class OrbitStartResponse(BaseModel):
     id: str
     correct_lat: float
     correct_lon: float
+    round_number: int
+    total_rounds: int
+    total_score: int
+    finished: bool = False
 
 
 class OrbitGuessRequest(BaseModel):
@@ -39,3 +44,26 @@ class OrbitGuessResult(BaseModel):
     correct_lat: float
     correct_lon: float
     finished: bool
+    round_number: int
+    total_rounds: int
+    game_finished: bool
+    total_score: int
+
+
+class OrbitRoundSummary(BaseModel):
+    round_number: int
+    score: int
+    distance: float
+    guess_lat: float
+    guess_lon: float
+    correct_lat: float
+    correct_lon: float
+
+
+class OrbitGameResults(BaseModel):
+    id: str
+    total_score: int
+    max_score: int
+    total_rounds: int
+    stars: int
+    rounds: list[OrbitRoundSummary]
