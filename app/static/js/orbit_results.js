@@ -9,6 +9,7 @@ class OrbitResultsOverlay {
         this.starsElementId = options.starsElementId || 'orbit-results-stars';
         this.totalScoreElementId = options.totalScoreElementId || 'orbit-results-total-score';
         this.maxScoreElementId = options.maxScoreElementId || 'orbit-results-max-score';
+        this.totalTimeElementId = options.totalTimeElementId || 'orbit-results-total-time';
         this.playAgainButtonId = options.playAgainButtonId || 'orbit-results-play-again';
         this.onPlayAgain = options.onPlayAgain || null;
 
@@ -98,6 +99,7 @@ class OrbitResultsOverlay {
         const starsEl = document.getElementById(this.starsElementId);
         const totalScoreEl = document.getElementById(this.totalScoreElementId);
         const maxScoreEl = document.getElementById(this.maxScoreElementId);
+        const totalTimeEl = document.getElementById(this.totalTimeElementId);
 
         if (starsEl) {
             starsEl.innerHTML = Array.from({ length: 5 }, (_, index) => {
@@ -113,6 +115,10 @@ class OrbitResultsOverlay {
 
         if (maxScoreEl) {
             maxScoreEl.textContent = `/ ${results.max_score}`;
+        }
+
+        if (totalTimeEl) {
+            totalTimeEl.textContent = results.totalTimeText || '—';
         }
     }
 

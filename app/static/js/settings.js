@@ -8,6 +8,7 @@ function loadSettings() {
         .then((data) => {
             document.getElementById('showHints').checked = data.show_hints;
             document.getElementById('showTimer').checked = data.show_timer ?? false;
+            window.dispatchEvent(new CustomEvent('settings-updated', { detail: data }));
         })
         .catch((err) => console.error('Ошибка загрузки настроек:', err));
 }
@@ -30,6 +31,7 @@ function saveSettings() {
             const message = document.getElementById('statusMessage');
             message.textContent = 'Настройки сохранены.';
             message.style.color = '#22c55e';
+            window.dispatchEvent(new CustomEvent('settings-updated', { detail: data }));
         })
         .catch((err) => {
             const message = document.getElementById('statusMessage');

@@ -34,8 +34,9 @@ class OrbitStartResponse(BaseModel):
 
 class OrbitGuessRequest(BaseModel):
     id: str
-    lat: float = Field(..., ge=-90, le=90)
-    lon: float = Field(..., ge=-180, le=180)
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lon: float | None = Field(default=None, ge=-180, le=180)
+    timed_out: bool = False
 
 
 class OrbitGuessResult(BaseModel):
