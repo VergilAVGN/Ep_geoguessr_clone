@@ -100,13 +100,24 @@ def submit_orbit_guess(payload: OrbitGuessRequest):
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
 
-    distance_km = _calculate_distance_km(
-        payload.lat,
-        payload.lon,
-        float(game["correct_lat"]),
-        float(game["correct_lon"]),
-    )
-    score = _score_from_distance(distance_km)
+    guess_lat = payload.lat
+    guess_lon = payload.lon
+
+    if payload.timed_out:
+        guess_lat = game.get("last_guess_lat")
+        guess_lon = game.get("last_guess_lon")
+
+    if guess_lat is None or guess_lon is None:
+        score = 0
+        distance_km = 0.0
+    else:
+        distance_km = _calculate_distance_km(
+            guess_lat,
+            guess_lon,
+            float(game["correct_lat"]),
+            float(game["correct_lon"]),
+        )
+        score = _score_from_distance(distance_km)
     round_number = int(game["round_number"])
     completed_rounds = int(game["completed_rounds"]) + 1
     total_score = int(game["total_score"]) + score
@@ -120,8 +131,8 @@ def submit_orbit_guess(payload: OrbitGuessRequest):
             "round_number": round_number,
             "score": score,
             "distance": round(distance_km, 2),
-            "guess_lat": payload.lat,
-            "guess_lon": payload.lon,
+            "guess_lat": guess_lat if guess_lat is not None else 0.0,
+            "guess_lon": guess_lon if guess_lon is not None else 0.0,
             "correct_lat": float(game["correct_lat"]),
             "correct_lon": float(game["correct_lon"]),
         }

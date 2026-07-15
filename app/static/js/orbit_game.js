@@ -37,6 +37,21 @@
     /** @type {boolean} */
     let gameFinished = false;
 
+    /** @type {boolean} */
+    let roundTimerEnabled = true;
+
+    /** @type {number} */
+    let roundTimerDurationMs = 5 * 60 * 1000;
+
+    /** @type {number|null} */
+    let roundTimerIntervalId = null;
+
+    /** @type {number|null} */
+    let roundTimerStartedAt = null;
+
+    /** @type {number} */
+    let totalElapsedMs = 0;
+
     /** @type {{ roundNumber: number, score: number|null }[]} */
     let roundResults = Array.from({ length: 5 }, (_, index) => ({
         roundNumber: index + 1,
@@ -50,7 +65,26 @@
         setupSatelliteViewport();
         setupNewImageButton();
         renderRoundOverview();
+        window.addEventListener('settings-updated', (event) => {
+            const nextEnabled = event.detail?.show_timer ?? roundTimerEnabled;
+            applyTimerSetting(nextEnabled);
+        });
+        void loadTimerSettings();
     });
+
+    async function loadTimerSettings() {
+        try {
+            const response = await fetch('/api/settings');
+            if (!response.ok) {
+                throw new Error(`Failed to load settings (${response.status})`);
+            }
+
+            const data = await response.json();
+            applyTimerSetting(data.show_timer ?? true);
+        } catch (error) {
+            console.error('[Orbit] Failed to load timer settings:', error);
+        }
+    }
 
     function setupResultsOverlay() {
         resultsOverlay = new OrbitResultsOverlay({
@@ -141,6 +175,8 @@
             nextRoundBtn.disabled = true;
         }
 
+        stopRoundTimer({ persistElapsed: true });
+
         try {
             const payload = await OrbitImagery.fetchRandomImage();
 
@@ -157,6 +193,7 @@
             guessMap?.reset();
             guessMap?.enterActiveMode();
             await startOrbitRound(payload.metadata);
+            startRoundTimer();
         } catch (error) {
             console.error('[Orbit] Failed to load satellite image:', error);
         } finally {
@@ -174,6 +211,9 @@
         guessMap = new GuessMap({
             onCoordsChange(coords) {
                 console.debug('[Orbit] guess coords:', coords);
+                if (activeGameId) {
+                    persistLastGuess(coords);
+                }
             },
             onGuess(coords) {
                 handleGuess(coords);
@@ -219,12 +259,36 @@
         }
     }
 
+    function persistLastGuess(coords) {
+        if (!activeGameId) {
+            return;
+        }
+
+        window.localStorage.setItem(`orbit-last-guess-${activeGameId}`, JSON.stringify(coords));
+    }
+
+    function getLastPersistedGuess() {
+        if (!activeGameId) {
+            return null;
+        }
+
+        try {
+            const stored = window.localStorage.getItem(`orbit-last-guess-${activeGameId}`);
+            return stored ? JSON.parse(stored) : null;
+        } catch (error) {
+            console.error('[Orbit] Failed to read last guess:', error);
+            return null;
+        }
+    }
+
     async function handleGuess(coords) {
         console.info('[Orbit] Guess submitted:', coords);
 
         if (!activeGameId || !guessMap?.isGuessingEnabled) {
             return;
         }
+
+        stopRoundTimer({ persistElapsed: true });
 
         try {
             const response = await fetch('/api/orbit/guess', {
@@ -290,7 +354,10 @@
             gameRootEl?.classList.add('is-results-active');
 
             window.setTimeout(() => {
-                resultsOverlay.show(results);
+                resultsOverlay.show({
+                    ...results,
+                    totalTimeText: roundTimerEnabled ? formatDuration(totalElapsedMs) : 'Timer off',
+                });
             }, 450);
         } catch (error) {
             console.error('[Orbit] Failed to show final results:', error);
@@ -312,6 +379,7 @@
         currentRoundNumber = 1;
         totalRounds = 5;
         totalScore = 0;
+        totalElapsedMs = 0;
         roundResults = Array.from({ length: totalRounds }, (_, index) => ({
             roundNumber: index + 1,
             score: null,
@@ -323,10 +391,194 @@
             imageEl.style.visibility = 'hidden';
         }
 
+        stopRoundTimer({ persistElapsed: false });
         renderRoundOverview();
         guessMap?.reset();
         guessMap?.enterActiveMode();
+        syncTimerDisplay();
         loadRandomImage();
+    }
+
+    function applyTimerSetting(enabled) {
+        roundTimerEnabled = Boolean(enabled);
+
+        if (!roundTimerEnabled) {
+            stopRoundTimer({ persistElapsed: false });
+            syncTimerDisplay();
+            return;
+        }
+
+        if (activeGameId && !gameFinished && !roundTimerIntervalId) {
+            startRoundTimer();
+        }
+    }
+
+    function startRoundTimer() {
+        stopRoundTimer({ persistElapsed: true });
+
+        if (!roundTimerEnabled) {
+            syncTimerDisplay();
+            return;
+        }
+
+        roundTimerStartedAt = Date.now();
+        syncTimerDisplay();
+
+        roundTimerIntervalId = window.setInterval(() => {
+            if (!roundTimerStartedAt) {
+                return;
+            }
+
+            const elapsed = Date.now() - roundTimerStartedAt;
+            const remaining = Math.max(0, roundTimerDurationMs - elapsed);
+
+            if (remaining <= 0) {
+                stopRoundTimer({ persistElapsed: true });
+                void finishRoundByTimeout();
+                return;
+            }
+
+            syncTimerDisplay(remaining);
+        }, 1000);
+    }
+
+    function stopRoundTimer({ persistElapsed = true } = {}) {
+        if (roundTimerIntervalId !== null) {
+            window.clearInterval(roundTimerIntervalId);
+            roundTimerIntervalId = null;
+        }
+
+        if (persistElapsed && roundTimerStartedAt && roundTimerEnabled) {
+            const elapsed = Date.now() - roundTimerStartedAt;
+            if (elapsed > 0) {
+                totalElapsedMs += elapsed;
+            }
+        }
+
+        roundTimerStartedAt = null;
+        syncTimerDisplay();
+    }
+
+    async function finishRoundByTimeout() {
+        const fallbackGuess = getLastPersistedGuess();
+
+        if (!activeGameId || !guessMap?.isGuessingEnabled) {
+            return;
+        }
+
+        guessMap?.setTimerDisplay('00:00');
+        guessMap?.setScorePanel({
+            score: null,
+            distanceKm: null,
+            label: 'Time is up',
+        });
+
+        try {
+            const response = await fetch('/api/orbit/guess', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: activeGameId,
+                    lat: fallbackGuess?.lat ?? null,
+                    lon: fallbackGuess?.lon ?? null,
+                    timed_out: true,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Timeout guess failed (${response.status})`);
+            }
+
+            const result = await response.json();
+            totalScore = result.total_score;
+            totalRounds = result.total_rounds;
+            roundResults = roundResults.map((entry) =>
+                entry.roundNumber === result.round_number
+                    ? { ...entry, score: result.score }
+                    : entry,
+            );
+
+            if (!result.game_finished) {
+                currentRoundNumber = result.round_number + 1;
+            } else {
+                currentRoundNumber = result.round_number;
+            }
+
+            syncRoundResults();
+            renderRoundOverview();
+            guessMap?.showRoundResult(result);
+            guessMap?.setScorePanel({
+                score: result.score,
+                distanceKm: result.distance,
+                label: 'Round result',
+            });
+            gameFinished = result.game_finished;
+            guessMap?.enterReviewMode({ showNextRound: !result.game_finished });
+
+            if (result.game_finished) {
+                await showFinalResults();
+            }
+        } catch (error) {
+            console.error('[Orbit] Timeout guess API error:', error);
+        }
+    }
+
+    function syncTimerDisplay(remainingMs = null) {
+        const timerPanel = document.getElementById('orbit-timer-panel');
+        const timerValueEl = document.getElementById('orbit-timer-value');
+        const timerProgressEl = document.getElementById('orbit-timer-progress');
+
+        if (!roundTimerEnabled) {
+            if (timerPanel) {
+                timerPanel.hidden = true;
+                timerPanel.style.display = 'none';
+            }
+            if (timerProgressEl) {
+                timerProgressEl.style.width = '0%';
+            }
+            guessMap?.setTimerDisplay('');
+            return;
+        }
+
+        if (remainingMs == null) {
+            if (timerPanel) {
+                timerPanel.hidden = true;
+                timerPanel.style.display = 'none';
+            }
+            if (timerProgressEl) {
+                timerProgressEl.style.width = '0%';
+            }
+            guessMap?.setTimerDisplay('');
+            return;
+        }
+
+        const formattedValue = formatCountdown(remainingMs);
+        const progressPercent = Math.max(0, Math.min(100, (remainingMs / roundTimerDurationMs) * 100));
+        if (timerValueEl) {
+            timerValueEl.textContent = formattedValue;
+        }
+        if (timerProgressEl) {
+            timerProgressEl.style.width = `${progressPercent}%`;
+        }
+        if (timerPanel) {
+            timerPanel.hidden = false;
+            timerPanel.style.display = 'flex';
+        }
+        guessMap?.setTimerDisplay(formattedValue);
+    }
+
+    function formatCountdown(milliseconds) {
+        const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+        const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+        const seconds = String(totalSeconds % 60).padStart(2, '0');
+        return `${minutes}:${seconds}`;
+    }
+
+    function formatDuration(milliseconds) {
+        const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+        const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+        const seconds = String(totalSeconds % 60).padStart(2, '0');
+        return `${minutes}:${seconds}`;
     }
 
     window.orbitGame = {
@@ -346,3 +598,5 @@
         },
     };
 })();
+
+
