@@ -6,12 +6,14 @@ from fastapi.testclient import TestClient
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from app.main import app
+from app.routers.orbit import orbit_games
 
 
 client = TestClient(app)
 
 
 def test_orbit_guess_flow_returns_result_payload():
+    orbit_games.clear()
     start_response = client.post(
         "/api/orbit/start",
         json={"lat": 48.8566, "lon": 2.3522},
@@ -38,6 +40,7 @@ def test_orbit_guess_flow_returns_result_payload():
 
 
 def test_orbit_session_supports_five_rounds():
+    orbit_games.clear()
     session_response = client.post(
         "/api/orbit/start",
         json={"lat": 48.8566, "lon": 2.3522},
@@ -77,3 +80,40 @@ def test_orbit_session_supports_five_rounds():
     assert results_body["total_rounds"] == 5
     assert len(results_body["rounds"]) == 5
     assert 0 <= results_body["stars"] <= 5
+
+
+def test_orbit_hint_endpoint_returns_circle_and_marks_used():
+    orbit_games.clear()
+    start_response = client.post(
+        "/api/orbit/start",
+        json={"lat": 48.8566, "lon": 2.3522},
+    )
+    assert start_response.status_code == 200
+    game_id = start_response.json()["id"]
+
+    hint_response = client.get(f"/api/orbit/hint/{game_id}")
+    assert hint_response.status_code == 200
+    hint_body = hint_response.json()
+    assert hint_body["radius_km"] == 3000
+    assert hint_body["used"] is True
+    assert isinstance(hint_body["center_lat"], float)
+    assert isinstance(hint_body["center_lon"], float)
+
+    second_hint_response = client.get(f"/api/orbit/hint/{game_id}")
+    assert second_hint_response.status_code == 400
+    assert second_hint_response.json()["detail"] == "Hint already used"
+
+
+def test_orbit_hint_without_game_id_uses_single_session():
+    orbit_games.clear()
+    start_response = client.post(
+        "/api/orbit/start",
+        json={"lat": 35.6895, "lon": 139.6917},
+    )
+    assert start_response.status_code == 200
+
+    hint_response = client.get("/api/orbit/hint")
+    assert hint_response.status_code == 200
+    hint_body = hint_response.json()
+    assert hint_body["radius_km"] == 3000
+    assert hint_body["used"] is True

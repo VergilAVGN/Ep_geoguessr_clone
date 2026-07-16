@@ -40,6 +40,9 @@
     /** @type {boolean} */
     let roundTimerEnabled = true;
 
+    /** @type {boolean} */
+    let hintsEnabled = true;
+
     /** @type {number} */
     let roundTimerDurationMs = 5 * 60 * 1000;
 
@@ -68,11 +71,12 @@
         window.addEventListener('settings-updated', (event) => {
             const nextEnabled = event.detail?.show_timer ?? roundTimerEnabled;
             applyTimerSetting(nextEnabled);
+            applyHintSetting(event.detail?.show_hints ?? hintsEnabled);
         });
-        void loadTimerSettings();
+        void loadSettings();
     });
 
-    async function loadTimerSettings() {
+    async function loadSettings() {
         try {
             const response = await fetch('/api/settings');
             if (!response.ok) {
@@ -81,8 +85,9 @@
 
             const data = await response.json();
             applyTimerSetting(data.show_timer ?? true);
+            applyHintSetting(data.show_hints ?? true);
         } catch (error) {
-            console.error('[Orbit] Failed to load timer settings:', error);
+            console.error('[Orbit] Failed to load settings:', error);
         }
     }
 
@@ -224,7 +229,60 @@
         });
 
         guessMap.init();
+        setupHintButton();
         window.orbitGuessMap = guessMap;
+    }
+
+    function setupHintButton() {
+        const hintBtn = document.getElementById('guess-map-hint');
+        if (!hintBtn) {
+            return;
+        }
+
+        hintBtn.addEventListener('click', async () => {
+            if (!activeGameId || !hintsEnabled || hintBtn.disabled) {
+                return;
+            }
+
+            hintBtn.disabled = true;
+
+            try {
+                const response = await fetch(`/api/orbit/hint/${activeGameId}`);
+                if (!response.ok) {
+                    throw new Error(`Hint request failed (${response.status})`);
+                }
+
+                const hint = await response.json();
+                guessMap?.clearHintCircles();
+                guessMap?.addHintCircle(hint.center_lat, hint.center_lon, hint.radius_km * 1000, {
+                    color: '#4ea5ff',
+                    fillColor: '#bfdbfe',
+                    fillOpacity: 0.2,
+                });
+            } catch (error) {
+                console.error('[Orbit] Failed to load hint:', error);
+                if (hintsEnabled && Boolean(activeGameId)) {
+                    hintBtn.disabled = false;
+                }
+            }
+        });
+
+        setHintButtonVisibility(hintsEnabled && Boolean(activeGameId));
+    }
+
+    function setHintButtonVisibility(visible) {
+        const hintBtn = document.getElementById('guess-map-hint');
+        if (!hintBtn) {
+            return;
+        }
+
+        hintBtn.hidden = !visible;
+        hintBtn.disabled = !visible;
+    }
+
+    function applyHintSetting(enabled) {
+        hintsEnabled = Boolean(enabled);
+        setHintButtonVisibility(hintsEnabled && Boolean(activeGameId));
     }
 
     async function startOrbitRound(metadata) {
@@ -254,6 +312,7 @@
             totalScore = payload.total_score;
             syncRoundResults();
             renderRoundOverview();
+            setHintButtonVisibility(hintsEnabled && Boolean(activeGameId));
         } catch (error) {
             console.error('[Orbit] Failed to start round:', error);
         }
@@ -396,6 +455,7 @@
         guessMap?.reset();
         guessMap?.enterActiveMode();
         syncTimerDisplay();
+        setHintButtonVisibility(hintsEnabled && Boolean(activeGameId));
         loadRandomImage();
     }
 

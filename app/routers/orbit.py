@@ -10,6 +10,7 @@ from app.schemas.orbit import (
     OrbitGameResults,
     OrbitGuessRequest,
     OrbitGuessResult,
+    OrbitHintResponse,
     OrbitImageResponse,
     OrbitMetadata,
     OrbitRoundSummary,
@@ -17,6 +18,7 @@ from app.schemas.orbit import (
     OrbitStartResponse,
 )
 from app.services.nasa_service import NasaImageFetchError, nasa_service
+from app.services.orbit_service import generate_hint
 
 router = APIRouter(prefix="/api/orbit", tags=["orbit"])
 
@@ -69,6 +71,7 @@ def start_orbit_game(payload: OrbitStartRequest):
             "correct_lon": payload.lon,
             "completed_rounds": 0,
             "rounds": [],
+            "hint_used": False,
         }
         orbit_games[game_id] = game
     else:
@@ -82,6 +85,7 @@ def start_orbit_game(payload: OrbitStartRequest):
         game["round_number"] = int(game["completed_rounds"]) + 1
         game["correct_lat"] = payload.lat
         game["correct_lon"] = payload.lon
+        game["hint_used"] = False
 
     return OrbitStartResponse(
         id=game_id,
@@ -148,6 +152,35 @@ def submit_orbit_guess(payload: OrbitGuessRequest):
         total_rounds=TOTAL_ORBIT_ROUNDS,
         game_finished=bool(game["finished"]),
         total_score=total_score,
+    )
+
+
+@router.get("/hint", response_model=OrbitHintResponse)
+@router.get("/hint/{game_id}", response_model=OrbitHintResponse)
+def get_orbit_hint(game_id: str | None = None):
+    if game_id is None:
+        if not orbit_games:
+            raise HTTPException(status_code=404, detail="Game not found")
+        game = next(reversed(orbit_games.values()))
+    else:
+        game = orbit_games.get(game_id)
+
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    if bool(game.get("hint_used", False)):
+        raise HTTPException(status_code=400, detail="Hint already used")
+
+    center_lat, center_lon, radius_km = generate_hint(
+        float(game["correct_lat"]),
+        float(game["correct_lon"]),
+    )
+    game["hint_used"] = True
+    return OrbitHintResponse(
+        center_lat=center_lat,
+        center_lon=center_lon,
+        radius_km=radius_km,
+        used=True,
     )
 
 
