@@ -68,3 +68,10 @@ class OrbitGameResults(BaseModel):
     total_rounds: int
     stars: int
     rounds: list[OrbitRoundSummary]
+
+
+class OrbitHintResponse(BaseModel):
+    center_lat: float
+    center_lon: float
+    radius_km: int
+    used: bool
