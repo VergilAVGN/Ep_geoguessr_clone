@@ -20,6 +20,8 @@ class OrbitStartRequest(BaseModel):
     lat: float = Field(..., ge=-90, le=90)
     lon: float = Field(..., ge=-180, le=180)
     game_id: str | None = None
+    layer: str | None = None
+    date: str | None = None
 
 
 class OrbitStartResponse(BaseModel):
@@ -71,7 +73,8 @@ class OrbitGameResults(BaseModel):
 
 
 class OrbitHintResponse(BaseModel):
-    center_lat: float
-    center_lon: float
-    radius_km: int
+    center_lat: float | None = None
+    center_lon: float | None = None
+    radius_km: int | None = None
     used: bool
+    facts: list[str] = Field(default_factory=list)

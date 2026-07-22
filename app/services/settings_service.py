@@ -7,6 +7,8 @@ class SettingsService:
             mode=GameMode.classic,
             difficulty=Difficulty.normal,
             show_hints=True,
+            show_circle_hints=True,
+            show_data_hints=True,
             map_source="default",
             show_timer=True,
         )

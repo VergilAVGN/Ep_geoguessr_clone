@@ -41,7 +41,13 @@
     let roundTimerEnabled = true;
 
     /** @type {boolean} */
-    let hintsEnabled = true;
+    let circleHintsEnabled = true;
+
+    let dataHintsEnabled = true;
+
+    let circleHintUsed = false;
+
+    let dataHintUsed = false;
 
     /** @type {number} */
     let roundTimerDurationMs = 5 * 60 * 1000;
@@ -71,7 +77,7 @@
         window.addEventListener('settings-updated', (event) => {
             const nextEnabled = event.detail?.show_timer ?? roundTimerEnabled;
             applyTimerSetting(nextEnabled);
-            applyHintSetting(event.detail?.show_hints ?? hintsEnabled);
+            applyHintSettings(event.detail || {});
         });
         void loadSettings();
     });
@@ -85,7 +91,7 @@
 
             const data = await response.json();
             applyTimerSetting(data.show_timer ?? true);
-            applyHintSetting(data.show_hints ?? true);
+            applyHintSettings(data);
         } catch (error) {
             console.error('[Orbit] Failed to load settings:', error);
         }
@@ -234,17 +240,17 @@
     }
 
     function setupHintButton() {
-        const hintBtn = document.getElementById('guess-map-hint');
-        if (!hintBtn) {
+        const circleHintBtn = document.getElementById('guess-map-circle-hint');
+        const dataHintBtn = document.getElementById('guess-map-data-hint');
+        if (!circleHintBtn || !dataHintBtn) {
             return;
         }
 
-        hintBtn.addEventListener('click', async () => {
-            if (!activeGameId || !hintsEnabled || hintBtn.disabled) {
+        circleHintBtn.addEventListener('click', async () => {
+            if (!activeGameId || !circleHintsEnabled || circleHintBtn.disabled) {
                 return;
             }
-
-            hintBtn.disabled = true;
+            circleHintBtn.disabled = true;
 
             try {
                 const response = await fetch(`/api/orbit/hint/${activeGameId}`);
@@ -259,30 +265,76 @@
                     fillColor: '#bfdbfe',
                     fillOpacity: 0.2,
                 });
+                circleHintUsed = true;
+                setHintButtonVisibility();
             } catch (error) {
                 console.error('[Orbit] Failed to load hint:', error);
-                if (hintsEnabled && Boolean(activeGameId)) {
-                    hintBtn.disabled = false;
+                if (circleHintsEnabled && Boolean(activeGameId)) {
+                    circleHintBtn.disabled = false;
                 }
             }
         });
 
-        setHintButtonVisibility(hintsEnabled && Boolean(activeGameId));
+        dataHintBtn.addEventListener('click', async () => {
+            if (!activeGameId || !dataHintsEnabled || dataHintBtn.disabled) {
+                return;
+            }
+            dataHintBtn.disabled = true;
+            try {
+                const response = await fetch(`/api/orbit/hint/${activeGameId}/data`);
+                if (!response.ok) {
+                    throw new Error(`Data hint request failed (${response.status})`);
+                }
+                showHintFacts((await response.json()).facts || []);
+                dataHintUsed = true;
+                setHintButtonVisibility();
+            } catch (error) {
+                console.error('[Orbit] Failed to load data hint:', error);
+                if (dataHintsEnabled && Boolean(activeGameId)) {
+                    dataHintBtn.disabled = false;
+                }
+            }
+        });
+
+        setHintButtonVisibility();
     }
 
-    function setHintButtonVisibility(visible) {
-        const hintBtn = document.getElementById('guess-map-hint');
-        if (!hintBtn) {
+    function showHintFacts(facts) {
+        const resultsEl = document.getElementById('guess-map-scan-results');
+        if (!resultsEl || !facts.length) {
             return;
         }
 
-        hintBtn.hidden = !visible;
-        hintBtn.disabled = !visible;
+        resultsEl.replaceChildren(
+            ...facts.map((fact) => {
+                const item = document.createElement('div');
+                item.className = 'guess-map-panel__scan-line';
+                item.textContent = fact;
+                return item;
+            }),
+        );
+        resultsEl.hidden = false;
     }
 
-    function applyHintSetting(enabled) {
-        hintsEnabled = Boolean(enabled);
-        setHintButtonVisibility(hintsEnabled && Boolean(activeGameId));
+    function setHintButtonVisibility() {
+        const isRoundActive = Boolean(activeGameId) && !gameFinished;
+        const buttons = [
+            [document.getElementById('guess-map-circle-hint'), circleHintsEnabled && !circleHintUsed],
+            [document.getElementById('guess-map-data-hint'), dataHintsEnabled && !dataHintUsed],
+        ];
+        buttons.forEach(([button, enabled]) => {
+            if (button) {
+                button.hidden = !enabled || !isRoundActive;
+                button.disabled = !enabled || !isRoundActive;
+            }
+        });
+    }
+
+    function applyHintSettings(settings) {
+        const legacyHintsEnabled = settings.show_hints ?? true;
+        circleHintsEnabled = settings.show_circle_hints ?? legacyHintsEnabled;
+        dataHintsEnabled = settings.show_data_hints ?? legacyHintsEnabled;
+        setHintButtonVisibility();
     }
 
     async function startOrbitRound(metadata) {
@@ -298,6 +350,8 @@
                     lat: metadata.latitude,
                     lon: metadata.longitude,
                     game_id: activeGameId || undefined,
+                    layer: metadata.layer,
+                    date: metadata.date,
                 }),
             });
 
@@ -307,12 +361,14 @@
 
             const payload = await response.json();
             activeGameId = payload.id;
+            circleHintUsed = false;
+            dataHintUsed = false;
             currentRoundNumber = payload.round_number;
             totalRounds = payload.total_rounds;
             totalScore = payload.total_score;
             syncRoundResults();
             renderRoundOverview();
-            setHintButtonVisibility(hintsEnabled && Boolean(activeGameId));
+            setHintButtonVisibility();
         } catch (error) {
             console.error('[Orbit] Failed to start round:', error);
         }
@@ -389,6 +445,7 @@
             });
             gameFinished = result.game_finished;
             guessMap?.enterReviewMode({ showNextRound: !result.game_finished });
+            setHintButtonVisibility();
 
             if (result.game_finished) {
                 await showFinalResults();
@@ -455,7 +512,7 @@
         guessMap?.reset();
         guessMap?.enterActiveMode();
         syncTimerDisplay();
-        setHintButtonVisibility(hintsEnabled && Boolean(activeGameId));
+        setHintButtonVisibility();
         loadRandomImage();
     }
 
@@ -658,5 +715,3 @@
         },
     };
 })();
-
-

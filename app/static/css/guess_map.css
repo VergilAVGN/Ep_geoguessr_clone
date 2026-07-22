@@ -130,13 +130,23 @@
     opacity: 0.95;
 }
 
+.guess-map-panel__hint-btn#guess-map-data-hint {
+    color: #f8fafc;
+    background: #111827;
+    border: 1px solid #64748b;
+    border-radius: 7px;
+    box-shadow: none;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
 .guess-map-panel__map-wrapper.is-locked {
     cursor: default;
 }
 
-/* Future panels */
-.guess-map-panel__score-panel,
-.guess-map-panel__scan-results {
+/* Result panel */
+.guess-map-panel__score-panel {
     font-size: 0.85rem;
     line-height: 1.45;
     color: var(--guess-map-muted);
@@ -144,6 +154,45 @@
     border-radius: 10px;
     background: rgba(31, 41, 55, 0.8);
     border: 1px solid var(--guess-map-border);
+}
+
+/* Terminal-styled satellite scan */
+.guess-map-panel__scan-results {
+    position: relative;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 0.78rem;
+    line-height: 1.65;
+    color: #ffffff;
+    padding: 12px;
+    border-radius: 8px;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.018) 0,
+            rgba(255, 255, 255, 0.018) 1px,
+            transparent 1px,
+            transparent 4px
+        ),
+        rgba(9, 9, 11, 0.96);
+    border: 1px solid #3f3f46;
+    box-shadow: none;
+}
+
+.guess-map-panel__scan-results::before {
+    content: "ORBITAL SCAN // COMPLETE";
+    display: block;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    color: #ffffff;
+    border-bottom: 1px solid #3f3f46;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.guess-map-panel__scan-line::before {
+    content: "> ";
+    color: #ffffff;
 }
 
 .guess-map-panel__score-panel:not([hidden]),
