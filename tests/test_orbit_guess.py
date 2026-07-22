@@ -1,5 +1,6 @@
 import os
 import sys
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -82,7 +83,8 @@ def test_orbit_session_supports_five_rounds():
     assert 0 <= results_body["stars"] <= 5
 
 
-def test_orbit_hint_endpoint_returns_circle_and_marks_used():
+@patch("app.routers.orbit.build_orbit_hint_facts", return_value=["Hemisphere: Northern"])
+def test_orbit_hint_endpoint_returns_circle_and_marks_used(mock_build_hints):
     orbit_games.clear()
     start_response = client.post(
         "/api/orbit/start",
@@ -98,6 +100,8 @@ def test_orbit_hint_endpoint_returns_circle_and_marks_used():
     assert hint_body["used"] is True
     assert isinstance(hint_body["center_lat"], float)
     assert isinstance(hint_body["center_lon"], float)
+    assert hint_body["facts"] == []
+    mock_build_hints.assert_not_called()
 
     second_hint_response = client.get(f"/api/orbit/hint/{game_id}")
     assert second_hint_response.status_code == 400
@@ -117,3 +121,20 @@ def test_orbit_hint_without_game_id_uses_single_session():
     hint_body = hint_response.json()
     assert hint_body["radius_km"] == 3000
     assert hint_body["used"] is True
+    assert hint_body["facts"] == []
+
+
+@patch("app.routers.orbit.build_orbit_hint_facts", return_value=["Hemisphere: Northern"])
+def test_orbit_data_hint_returns_facts_once(mock_build_hints):
+    orbit_games.clear()
+    start_response = client.post("/api/orbit/start", json={"lat": 48.8566, "lon": 2.3522})
+    game_id = start_response.json()["id"]
+
+    hint_response = client.get(f"/api/orbit/hint/{game_id}/data")
+    assert hint_response.status_code == 200
+    assert hint_response.json()["facts"] == ["Hemisphere: Northern"]
+    assert hint_response.json()["radius_km"] is None
+    mock_build_hints.assert_called_once()
+
+    second_response = client.get(f"/api/orbit/hint/{game_id}/data")
+    assert second_response.status_code == 400

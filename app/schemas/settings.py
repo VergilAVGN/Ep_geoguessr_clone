@@ -19,6 +19,8 @@ class SettingsOut(BaseModel):
     mode: GameMode
     difficulty: Difficulty
     show_hints: bool
+    show_circle_hints: bool
+    show_data_hints: bool
     map_source: str
     show_timer: bool
 
@@ -27,5 +29,7 @@ class SettingsUpdate(BaseModel):
     mode: Optional[GameMode] = None
     difficulty: Optional[Difficulty] = None
     show_hints: Optional[bool] = None
+    show_circle_hints: Optional[bool] = None
+    show_data_hints: Optional[bool] = None
     map_source: Optional[str] = None
     show_timer: Optional[bool] = None
