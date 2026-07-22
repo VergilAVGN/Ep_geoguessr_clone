@@ -144,6 +144,6 @@ python -m pytest tests/ -q
 
 ## Author
 
-Rostik Chabanets · Portfolio project · 2026
+Rostyslav Chabanets · Portfolio project · 2026
 
 For more detailed launch instructions, see [Launch_README_eng.md](Launch_README_eng.md).
