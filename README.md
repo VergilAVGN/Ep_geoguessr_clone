@@ -20,6 +20,7 @@ EarthGuessr asks the player to identify a location from a real satellite image. 
   - **Circle Hint** — a 3,000 km area on the map.
   - **Scan** — terminal-style satellite and geographic metadata.
 - Scan metadata: satellite, acquisition date, continent, ESA WorldCover surface class, elevation, approximate distance to coast, and hemisphere.
+- NASA acquisition dates are resolved through the Earthdata CMR Atom XML API before requesting the image from GIBS WMS.
 - Final results overlay with every guess, correct position, distance, score, and star rating.
 - Docker support and a health-check endpoint.
 
@@ -66,10 +67,11 @@ Open [http://localhost:8000](http://localhost:8000).
 
 ## How Orbit Game works
 
-1. The server selects a random point on land and requests a satellite image from NASA GIBS.
-2. The player places a marker on the world map and submits a guess.
-3. The backend calculates the distance to the correct position and awards points.
-4. After five rounds, the game displays a detailed results overlay.
+1. The server selects a random point on land and chooses one satellite layer.
+2. It queries the NASA Earthdata CMR API for the latest acquisition date using an Atom XML response, then requests the image from NASA GIBS WMS for that date.
+3. The player places a marker on the world map and submits a guess.
+4. The backend calculates the distance to the correct position and awards points.
+5. After five rounds, the game displays a detailed results overlay.
 
 The maximum session score is **25,000 points**.
 
@@ -139,7 +141,7 @@ python -m pytest tests/ -q
 
 ## Notes
 
-- NASA GIBS, OpenStreetMap, Open-Meteo, Nominatim, and ESA WorldCover require network access.
+- NASA Earthdata CMR, NASA GIBS, OpenStreetMap, Open-Meteo, Nominatim, and ESA WorldCover require network access.
 - ESA WorldCover is a land-cover product. Its `Bare / sparse vegetation / Desert` class is not a real-time observation for the date of a satellite image.
 
 ## Author

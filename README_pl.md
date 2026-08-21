@@ -20,6 +20,7 @@ EarthGuessr polega na odgadywaniu lokalizacji na podstawie prawdziwego zdjęcia 
   - **Circle Hint** — obszar o promieniu 3 000 km na mapie.
   - **Scan** — dane satelitarne i geograficzne w stylu terminala.
 - Dane Scan: satelita, data pozyskania, kontynent, klasa powierzchni ESA WorldCover, wysokość, przybliżona odległość od wybrzeża i półkula.
+- Daty pozyskania zdjęć NASA są ustalane przez API Earthdata CMR zwracające dane w formacie Atom XML przed pobraniem obrazu z GIBS WMS.
 - Końcowy ekran wyników z każdą próbą, właściwą pozycją, odległością, punktami i oceną gwiazdkową.
 - Obsługa Dockera i endpoint health check.
 
@@ -66,10 +67,11 @@ Otwórz [http://localhost:8000](http://localhost:8000).
 
 ## Jak działa Orbit Game
 
-1. Serwer wybiera losowy punkt na lądzie i pobiera zdjęcie satelitarne z NASA GIBS.
-2. Gracz umieszcza znacznik na mapie świata i wysyła odpowiedź.
-3. Backend oblicza odległość od właściwej pozycji i przyznaje punkty.
-4. Po pięciu rundach gra wyświetla szczegółowy ekran wyników.
+1. Serwer wybiera losowy punkt na lądzie i jeden kanał satelitarny.
+2. Pyta API NASA Earthdata CMR o najnowszą datę pozyskania, odczytując odpowiedź Atom XML, a następnie pobiera obraz z NASA GIBS WMS dla tej daty.
+3. Gracz umieszcza znacznik na mapie świata i wysyła odpowiedź.
+4. Backend oblicza odległość od właściwej pozycji i przyznaje punkty.
+5. Po pięciu rundach gra wyświetla szczegółowy ekran wyników.
 
 Maksymalny wynik sesji to **25 000 punktów**.
 
@@ -139,7 +141,7 @@ python -m pytest tests/ -q
 
 ## Uwagi
 
-- NASA GIBS, OpenStreetMap, Open-Meteo, Nominatim i ESA WorldCover wymagają dostępu do sieci.
+- NASA Earthdata CMR, NASA GIBS, OpenStreetMap, Open-Meteo, Nominatim i ESA WorldCover wymagają dostępu do sieci.
 - ESA WorldCover jest produktem klasyfikacji pokrycia terenu. Klasa `Bare / sparse vegetation / Desert` nie jest obserwacją w czasie rzeczywistym dla daty zdjęcia satelitarnego.
 
 ## Autor
